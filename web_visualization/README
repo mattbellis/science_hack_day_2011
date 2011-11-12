@@ -1,0 +1,16 @@
+################################################################################
+# README
+################################################################################
+
+Requirements:
+processing.js
+
+Copy processing-1.3.6.js into this directory. Or make a soft link to it here. 
+
+If you are running Apache2 on Linux, make a soft link from this directory to
+/var/www
+
+Point your laptop browser to
+
+localhost/web_visualization
+
