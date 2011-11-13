@@ -1,4 +1,4 @@
-float width = 1400;
+float width = 1300;
 float height = 550;
 
 float center_x = width/2.0;
@@ -55,10 +55,10 @@ void setup(){
     lines = loadStrings("dimuon_small.csv");
     //console.log(lines[event_count]);
 
-    hs1 = new HScrollbar(500,20,100,10);
+    hs1 = new HScrollbar(0,200,width,100);
 
-    line = lines[event_count];
-    vals = split(line,', ');
+    myline = lines[event_count];
+    vals = split(myline,', ');
     fill_vals(vals);
     for (int i=0;i<nbins;i++)
     {
@@ -73,6 +73,7 @@ void draw(){
     background(0);
     camera();
     lights();
+    noStroke();
     //colorMode(HSB,100);
     //time_to_display  = hs1.getPos() - 500;
 
@@ -99,6 +100,21 @@ void draw(){
     sphere(20);
     popMatrix();
 
+    ///////// Axis //////////////////
+    stroke(255);
+    line(0,height-30,width,height-30);
+    noStroke();
+    for (int i=0;i<nbins;i+=12)
+    {
+        textSize(30);
+        String axiss = String(histogram_x[i].toFixed(0));
+        //stroke(255);
+        fill(255);
+        xpos = i*(width/nbins);
+        text(axiss, xpos, height-30, 100, 100);
+        //text("test", 50, 50, 500, 100);
+    }
+
     ////////// Text //////////////////
     textSize(60);
 
@@ -116,14 +132,14 @@ void draw(){
     //bin_width = width/float(range);
 
     //fill(255-2.5*timer);
-    fill(255)
+    fill(255);
     xpos = bin_index*(width/nbins);
-    rect(xpos, height-histogram_y[bin_index]*tick_height, width/nbins, histogram_y[bin_index]*tick_height);
+    rect(xpos, height-histogram_y[bin_index]*tick_height - 30, width/nbins, histogram_y[bin_index]*tick_height);
     for (int i=0;i<nbins;i++)
     {
         fill(255,100,100);
         xpos = (width/nbins)*i;
-        rect(xpos, height-histogram_y[i]*tick_height, width/nbins, histogram_y[i]*tick_height);
+        rect(xpos, height-histogram_y[i]*tick_height - 30, width/nbins, histogram_y[i]*tick_height);
     }
 
     //fill(255-2.5*timer,100-timer,100-timer);
@@ -136,10 +152,10 @@ void draw(){
     if (timer >= time_to_display)
     {
         timer = 0;
-        line = lines[event_count];
-        vals = split(line,', ');
+        myline = lines[event_count];
+        vals = split(myline,', ');
         fill_vals(vals);
-        
+
         event_count += 1;
         //console.log(lines[event_count])
         //console.log(px[0])
@@ -153,8 +169,8 @@ void draw(){
         z1=0;
 
     }
-    //hs1.update();
-    //hs1.display();
+    hs1.update();
+    hs1.display();
 }
 
 void fill_vals(vals)
@@ -190,9 +206,9 @@ void fill_vals(vals)
 float magnitude_of_3vec(v3)
 {
 
-        float magnitude = sqrt(v3[0]*v3[0] + v3[1]*v3[1] + v3[2]*v3[2]);
+    float magnitude = sqrt(v3[0]*v3[0] + v3[1]*v3[1] + v3[2]*v3[2]);
 
-        return magnitude;
+    return magnitude;
 
 }
 
@@ -202,13 +218,13 @@ float magnitude_of_3vec(v3)
 float mass_from_classical_physics(v4)
 {
 
-        float[] v3 = [v4[1],v4[2],v4[3]];
+    float[] v3 = [v4[1],v4[2],v4[3]];
 
-        float pmag = magnitude_of_3vec(v3);
+    float pmag = magnitude_of_3vec(v3);
 
-        float mass = pmag*pmag/(2.0*v4[0]);
+    float mass = pmag*pmag/(2.0*v4[0]);
 
-        return mass;
+    return mass;
 
 }
 
@@ -218,50 +234,98 @@ float mass_from_classical_physics(v4)
 float mass_from_special_relativity(v4)
 {
 
-        float[] v3 = [v4[1],v4[2],v4[3]];
-        float pmag = magnitude_of_3vec(v3);
+    float[] v3 = [v4[1],v4[2],v4[3]];
+    float pmag = magnitude_of_3vec(v3);
 
-        float mass_squared = v4[0]*v4[0] - pmag*pmag;
+    float mass_squared = v4[0]*v4[0] - pmag*pmag;
 
-        if (mass_squared>0)
-        {
-                return sqrt(mass_squared);
-        }
-        else
-        {
-                return -sqrt(abs(mass_squared));
-        }
+    if (mass_squared>0)
+    {
+        return sqrt(mass_squared);
+    }
+    else
+    {
+        return -sqrt(abs(mass_squared));
+    }
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
-
-
-/*
-void read_event()
+class HScrollbar
 {
-    try{
-        line = reader.readLine();
-        println(line);
-        num_sound_events = int(line);
-        println("num_sound_events: " + num_sound_events);
-        if (num_sound_events>0)
-        {
-            found_start_of_event = true;
+    int swidth, sheight;    // width and height of bar
+    int xpos, ypos;         // x and y position of bar
+    float spos, newspos;    // x position of slider
+    int sposMin, sposMax;   // max and min values of slider
+    int loose;              // how loose/heavy
+    boolean isOver;           // is the mouse over the slider?
+    boolean locked;
+    float ratio;
+
+    HScrollbar (int xp, int yp, int sw, int sh, int l) {
+        swidth = sw;
+        sheight = sh;
+        int widthtoheight = sw - sh;
+        ratio = (float)sw / (float)widthtoheight;
+        xpos = xp;
+        ypos = yp-sheight/2;
+        spos = xpos + swidth/2 - sheight/2;
+        newspos = spos;
+        sposMin = xpos;
+        sposMax = xpos + swidth - sheight;
+        loose = l;
+    }
+
+    void update() {
+        if(over()) {
+            isOver = true;
+        } else {
+            isOver = false;
+        }
+        if(mousePressed && isOver) {
+            locked = true;
+        }
+        if(!mousePressed) {
+            locked = false;
+        }
+        if(locked) {
+            newspos = constrain(mouseX-sheight/2, sposMin, sposMax);
+        }
+        if(abs(newspos - spos) > 1) {
+            spos = spos + (newspos-spos)/loose;
         }
     }
-    catch (Exception e)
-    {
-        e.printStackTrace();
-        exit();
+
+    int constrain(int val, int minv, int maxv) {
+        return min(max(val, minv), maxv);
     }
 
+    boolean over() {
+        if(mouseX > xpos && mouseX < xpos+swidth &&
+                mouseY > ypos && mouseY < ypos+sheight) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    void display() {
+        fill(255);
+        rect(xpos, ypos, swidth, sheight);
+        if(isOver || locked) {
+            fill(153, 102, 0);
+        } else {
+            fill(102, 102, 102);
+        }
+        rect(spos, ypos, sheight, sheight);
+    }
+
+    float getPos() {
+        // Convert spos to be values between
+        // 0 and the total width of the scrollbar
+        return spos * ratio;
+    }
 }
-*/
 
