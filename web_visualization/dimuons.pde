@@ -35,9 +35,9 @@ float z1=0;
 float vals[] = new vals[];
 
 int nbins = 200;
-float min = 0;
-float max = 100;
-float bin_width = (max-min)/nbins;
+float myMin = 0;
+float myMax = 100;
+float bin_width = (myMax-myMin)/nbins;
 float tick_height = 1.0;
 
 float histogram_x[] = new float[nbins];
@@ -55,14 +55,14 @@ void setup(){
     lines = loadStrings("dimuon_small.csv");
     //console.log(lines[event_count]);
 
-    hs1 = new HScrollbar(0,200,width,100);
+    hs1 = new HScrollbar(0,10,width,10,1);
 
     myline = lines[event_count];
     vals = split(myline,', ');
     fill_vals(vals);
     for (int i=0;i<nbins;i++)
     {
-        histogram_x[i] = i*bin_width + min + bin_width/2.0;
+        histogram_x[i] = i*bin_width + myMin + bin_width/2.0;
         histogram_y[i] = 0;
     }
     event_count += 1;
@@ -75,7 +75,10 @@ void draw(){
     lights();
     noStroke();
     //colorMode(HSB,100);
-    //time_to_display  = hs1.getPos() - 500;
+    // console.log(constrain(hs1.getPos()));
+    time_to_display = map(hs1.getPos(), 0, width, 40, 0);
+    speed_scale = 50.0/time_to_display;
+    console.log(time_to_display);
 
     // Muon
     e0 = energy[0];
@@ -189,11 +192,11 @@ void fill_vals(vals)
     v4 = [energy[0]+energy[1],px[0]+px[1],py[0]+py[1],pz[0]+pz[1]];
     mass_cp = mass_from_classical_physics(v4);
     mass_sr = mass_from_special_relativity(v4);
-    console.log("mass sr: "+mass_sr);
+    // console.log("mass sr: "+mass_sr);
 
-    min = 0;
-    bin_index = int((mass_sr-min)/bin_width);
-    console.log(bin_index);
+    myMin = 0;
+    bin_index = int((mass_sr-myMin)/bin_width);
+    // console.log(bin_index);
     histogram_y[bin_index] += 1;
 
     //console.log(histogram_x);
@@ -297,6 +300,16 @@ class HScrollbar
         }
     }
 
+    /*int min(val, max) {
+      if(val < max) return val;
+      return max;
+    }
+
+    int max(val, min) {
+      if(val > min) return val;
+      return min;
+    }*/
+
     int constrain(int val, int minv, int maxv) {
         return min(max(val, minv), maxv);
     }
@@ -312,14 +325,15 @@ class HScrollbar
 
 
     void display() {
-        fill(255);
-        rect(xpos, ypos, swidth, sheight);
         if(isOver || locked) {
             fill(153, 102, 0);
         } else {
             fill(102, 102, 102);
         }
         rect(spos, ypos, sheight, sheight);
+
+        fill(155);
+        rect(xpos, ypos, swidth, sheight);
     }
 
     float getPos() {
