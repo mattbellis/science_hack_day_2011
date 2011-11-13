@@ -2,8 +2,8 @@
 <html>
   <head>
     <title>Histogram</title>
-    <script type="text/javascript" src="../d3.js"></script>
-    <script type="text/javascript" src="../d3.layout.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
+    <script type="text/javascript" src="../../d3.layout.js"></script>
     <style type="text/css">
 
 body {
@@ -20,75 +20,97 @@ line {
   shape-rendering: crispEdges;
 }
 
-    </style>
-  </head>
+</style>
+</head>
   <body>
     <script type="text/javascript">
-	
-function IO(U, V) {
-	    var X = !window.XMLHttpRequest ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest;
-	    X.open(V ? "PUT" : "GET", U, false);
-	    X.setRequestHeader("Content-Type", "text/html");
-	    X.send(V ? V : "");
-	    return X.responseText;
+
+function loadFile(filename) {
+ var X = !window.XMLHttpRequest ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest;
+ X.open("GET", filename, false);
+ X.setRequestHeader("Content-Type", "text/html");
+ X.send("");
+ return X.responseText;
 }
 
 function project(list, column){
-	var ret = [];
+  var ret = [];
 
-	for (var item in list){
-		ret.push(list[item][column]);
-	}
-	
-	return ret;
+  for (var item in list){
+    ret.push(list[item][column]);
+  }
+  
+  return ret;
 }
 
 function foldl(func, list, initial){
-	var ret = initial;
+  var ret = initial;
 
-	for (var item in list){
-		ret = func(ret, list[item]);
-	}
-	
-	return ret;
+  for (var item in list){
+    ret = func(ret, list[item]);
+  }
+  
+  return ret;
 }
 
+function length(list) {
+  return list.length;
+}	
+
 function sum(x, y){
-	return x+y;	
+  return x+y;
 }
 
 function sum_list(list){
-	return foldl(sum, list, 0);
+  return foldl(sum, list, 0);
 }
 
 function calc_mean(list){
-	return sum_list(list)/list.length;
+  return sum_list(list)/list.length;
 }
 
 function square(value){
-	return value*value;
+  return value*value;
 }
 
 function calc_dev(value, mean){
-	return square(value - mean);
+  return square(value - mean);
 }
 
 function std_dev(list){
-	var mean = calc_mean(list);
-	var numerator = sum_list(list.map(function(x) { return calc_dev(x, mean); }));
-	
-	return Math.sqrt(numerator / list.length);
+  var mean = calc_mean(list);
+  var numerator = sum_list(list.map(function(x) { return calc_dev(x, mean); }));
+  return Math.sqrt(numerator / list.length);
 }
-
 
 function normalize(list){
-	var mean = calc_mean(list);
-	console.log('Mean: ' + list);
-	var std = std_dev(list);
-	return list.filter(function(x) {return x > mean - 2*std && x < mean + 2*std;});
+  var mean = calc_mean(list);
+  var std = std_dev(list);
+  return list.filter(function(x) {return x > mean - 2*std && x < mean + 2*std;});
 }
+
+function calc_m(line) {
+  var fline = line.map(parseFloat);
+  var e1 = fline[3];
+  var px1 = fline[4];
+  var py1 = fline[5];
+  var pz1 = fline[6];
+  var e2 = fline[11];
+  var px2 = fline[12];
+  var py2 = fline[13];
+  var pz2 = fline[14];
+  var e = e1 + e2;
+  var px = px1 + px2;
+  var py = py1 + py2;
+  var pz = pz1 + pz2;
+  var e_squared = square(e);
+  var p_squared = square(px) + square(py) + square(pz);
+  var m = Math.sqrt(e_squared - p_squared);
+
+  return m;
+}
+
 function calc_m_old(line){
-	
 	var fline = line.map(parseFloat);
 	
 	var e1 = fline[3];
@@ -111,79 +133,133 @@ function calc_m_old(line){
 	var m = p_squared/(2*e);
 	
 	return m;
-	
-	
-}
-function calc_m(line) {
-	
-	var fline = line.map(parseFloat);
-	
-	var e1 = fline[3];
-	var px1 = fline[4];
-	var py1 = fline[5];
-	var pz1 = fline[6];
-	var e2 = fline[11];
-	var px2 = fline[12];
-	var py2 = fline[13];
-	var pz2 = fline[14];
-	
-	var e = e1 + e2;
-	var px = px1 + px2;
-	var py = py1 + py2;
-	var pz = pz1 + pz2;
-	var e_squared = square(e);
-	var p_squared = square(px) + square(py) + square(pz);
-	
-	var m = Math.sqrt(e_squared - p_squared);
-
-	return m;
 }
 
-var mycells = IO('dimuon.csv').split(/\n/g).map(function(a){return a.split(/,/g)} )
-mycells.splice(0, 1);
+function draw_plot(data, width, height, bins, topic) {
 
-//column_data = project(mycells, 3).map(parseFloat);
-//column_data.splice(column_data.length - 1, 1);
+  var histogram = d3.layout.histogram().bins(bins)(data);
 
-var data = normalize(normalize(mycells.map(calc_m_old).filter(function(x) { return x + "" != "NaN" })));
+  var x = d3.scale.ordinal()
+      .domain(histogram.map(function(d) { return d.x; }))
+      .rangeRoundBands([0, width]);
 
-var w = 800,
-    h = 400;
+  var y = d3.scale.linear()
+      .domain([0, d3.max(histogram, function(d) { return d.y; })])
+      .range([0, height]);
 
-var histogram = d3.layout.histogram().bins(100)
-    (data);
+  var vis = d3.select("body").append("svg:svg")
+      .attr("width", width)
+      .attr("height", height)
+    .append("svg:g")
+      .attr("transform", "translate(.5)");
 
-var x = d3.scale.ordinal()
-    .domain(histogram.map(function(d) { return d.x; }))
-    .rangeRoundBands([0, w]);
+  vis.selectAll("rect")
+      .data(histogram)
+    .enter().append("svg:rect")
+      .attr("transform", function(d) { return "translate(" + x(d.x) + "," + (height - y(d.y)) + ")"; })
+      .attr("width", x.rangeBand())
+      .attr("y", function(d) { return y(d.y); })
+      .attr("height", 0)
+    .transition()
+      .duration(750)
+      .attr("y", 0)
+      .attr("x", 40)
+      .attr("height", function(d) { return y(d.y); });
 
-var y = d3.scale.linear()
-    .domain([0, d3.max(histogram, function(d) { return d.y; })])
-    .range([0, h]);
+  vis.append("svg:text")
+       .attr("x", width)
+       .attr("y", height - 40)
+       .attr("dx", 0) // padding-right7
+       .attr("dy", ".35em") // vertical-align: middle8
+       .attr("text-anchor", "end") // text-align: right9
+	   .style("font-weight", "bold")
+	   .style("font-size", "12px")
+       .text("Mass");
+	 
+  vis.append("svg:text")
+       .attr("x", width)
+       .attr("y", height - 20)
+       .attr("dx", 0) // padding-right7
+       .attr("dy", ".35em") // vertical-align: middle8
+       .attr("text-anchor", "end") // text-align: right9
+	   .style("font-weight", "bold")
+	   .style("font-size", "12px")
+	   .text(calc_mean(histogram[histogram.length - 1]).toFixed(2));
+ 
+  max_instances = d3.max(histogram.map(length));
 
-var vis = d3.select("body").append("svg:svg")
-    .attr("width", w)
-    .attr("height", h)
-  .append("svg:g")
-    .attr("transform", "translate(.5)");
+  vis.append("svg:text")
+       .attr("x", 35)
+       .attr("y", 10)
+       .attr("dx", 0) // padding-right7
+       .attr("dy", ".35em") // vertical-align: middle8
+       .attr("text-anchor", "end") // text-align: right9
+	   .style("font-weight", "bold")
+	   .style("font-size", "12px")
+       .text(max_instances);
+	 
+  vis.append("svg:text")
+       .attr("x", width / 2 + 100)
+       .attr("y", 100)
+       .attr("dx", 0) // padding-right7
+       .attr("dy", ".35em") // vertical-align: middle8
+       .attr("text-anchor", "end") // text-align: right9
+	   .style("font-weight", "bold")
+	   .style("font-size", "36px")
+       .text(topic);
+	 
+  vis.append("svg:text")
+     .attr("x", 30)
+     .attr("y", 155)
+     .attr("dx", 00) // padding-right7
+     .attr("dy", ".35em") // vertical-align: middle8
+     .attr("text-anchor", "end") // text-align: right9
+	 .style("font-weight", "bold")
+	 .style("font-size", "12px")
+	 .style("writing-mode", "tb")
+	 .style("glyph-orientation-vertical", "0")
+     .text("Instances");
 
-vis.selectAll("rect")
-    .data(histogram)
-  .enter().append("svg:rect")
-    .attr("transform", function(d) { return "translate(" + x(d.x) + "," + (h - y(d.y)) + ")"; })
-    .attr("width", x.rangeBand())
-    .attr("y", function(d) { return y(d.y); })
-    .attr("height", 0)
-  .transition()
-    .duration(750)
-    .attr("y", 0)
-    .attr("height", function(d) { return y(d.y); });
+  vis.append("svg:line")
+    .attr("x1", 40)
+    .attr("x2", width)
+    .attr("y1", height - 1)
+    .attr("y2", height - 1);
 
-vis.append("svg:line")
-    .attr("x1", 0)
-    .attr("x2", w)
-    .attr("y1", h)
-    .attr("y2", h);
+  vis.append("svg:line")
+    .attr("x1", 40)
+    .attr("x2", 40)
+    .attr("y1", 0)
+    .attr("y2", height);
+	
+	return vis;
+}
+
+function draw_plots() {
+  // Load the data from the CSV file
+  var file_data = loadFile('dimuon.csv');
+
+  // Split the CSV file into
+  var mycells = file_data.split(/\n/g).map(function(a){return a.split(/,/g)} )
+
+  // Get rid of the header line
+  mycells.splice(0, 1);
+
+  // Calculate the data using the pre-Einstein method, filter out invalid results before normalizing
+  var old_data = normalize(normalize(mycells.map(calc_m_old).filter(function(x) { return x + "" != "NaN" })));
+
+  // Calculate the data using the Einstein method, filter out invalid results before normalizing
+  var data = normalize(mycells.map(calc_m).filter(function(x) { return x + "" != "NaN" }));
+
+  var bins = 100;
+  var width = 800;
+  var height = 400;
+
+  draw_plot(old_data, width, height, bins, "Pre-Einstein");
+  draw_plot(data, width, height, bins, "Post-Einstein");
+}
+
+draw_plots();
 
     </script>
   </body>
