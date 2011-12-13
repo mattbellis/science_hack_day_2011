@@ -34,7 +34,7 @@ float z1=0;
 
 float vals[] = new vals[];
 
-int nbins = 200;
+int nbins = 400;
 float myMin = 0;
 float myMax = 100;
 float bin_width = (myMax-myMin)/nbins;
@@ -52,7 +52,7 @@ void setup(){
     //reader = createReader("/home/bellis/science_hack_day_2011/science_hack_day_2011/web_visualization/dimuons.csv");
     //reader = new BufferedReader(new FileReader("/home/bellis/science_hack_day_2011/science_hack_day_2011/web_visualization/dimuons.csv"));
     //String lines[] = loadStrings("dimuon_small.csv");
-    lines = loadStrings("dimuon_small.csv");
+    lines = loadStrings("dimuon.csv");
     //console.log(lines[event_count]);
 
     hs1 = new HScrollbar(0,10,width,10,1);
@@ -76,9 +76,9 @@ void draw(){
     noStroke();
     //colorMode(HSB,100);
     // console.log(constrain(hs1.getPos()));
-    time_to_display = map(hs1.getPos(), 0, width, 40, 0);
+    time_to_display = map(hs1.getPos(), 0, width, 200, 0);
     speed_scale = 50.0/time_to_display;
-    console.log(time_to_display);
+    //console.log(time_to_display);
 
     // Muon
     e0 = energy[0];
@@ -109,12 +109,12 @@ void draw(){
     noStroke();
     for (int i=0;i<nbins;i+=12)
     {
-        textSize(30);
+        textSize(25);
         String axiss = String(histogram_x[i].toFixed(0));
         //stroke(255);
         fill(255);
-        xpos = i*(width/nbins);
-        text(axiss, xpos, height-30, 100, 100);
+        xpos = i*(width/nbins) - 20;
+        text(axiss, xpos, height-30, 30, 100);
         //text("test", 50, 50, 500, 100);
     }
 

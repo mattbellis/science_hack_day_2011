@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="raphael-min.js"></script>
+  </head>
+  <body>
+      <form>
+          <select name="files">
+            <option value="1">Data set 1</option>
+        </select>
+        <input value="open" type="submit"/>
+      </form>
+  <script>
+      var paper = Raphael(10, 50, 320, 200);
+
+      // Creates circle at x = 50, y = 40, with radius 10
+      var circle = paper.circle(50, 40, 10);
+      // Sets the fill attribute of the circle to red (#f00)
+      circle.attr("fill", "#f00");
+
+      // Sets the stroke attribute of the circle to white
+      circle.attr("stroke", "#fff");
+  </script>
+  </body>
+</html>
+
